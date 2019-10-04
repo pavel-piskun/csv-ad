@@ -1,4 +1,4 @@
-package com.glispa;
+package com.glispa.csvad;
 
 import static org.junit.Assert.assertTrue;
 
