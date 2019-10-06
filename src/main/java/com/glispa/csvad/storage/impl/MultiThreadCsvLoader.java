@@ -6,18 +6,21 @@ import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 @Slf4j
-public class MultihreadCsvLoader implements AdLoader {
+@Component
+public class MultiThreadCsvLoader implements AdLoader {
     @Value("${csv.dir}")
     private String csvDir;
     @Value("${csv.loader.thread.count}")
@@ -31,8 +34,10 @@ public class MultihreadCsvLoader implements AdLoader {
 
             List<Future<List<Ad>>> futureList = new ArrayList<>();
             try (Stream<Path> walk = Files.walk(Paths.get(csvDir))) {
-                walk.filter(Files::isRegularFile)
-                        .forEach(path -> futureList.add(executor.submit(new CsvReaderWorker(path))));
+                List<Path> filesList = walk.filter(Files::isRegularFile).collect(Collectors.toList());
+                for(Path path: filesList) {
+                    futureList.add(executor.submit(new CsvReaderWorker(path)));
+                }
             }
             return processFutureList(futureList);
         } catch (Exception ex) {
@@ -43,13 +48,18 @@ public class MultihreadCsvLoader implements AdLoader {
 
     private List<Ad> processFutureList(List<Future<List<Ad>>> futureList) throws ExecutionException, InterruptedException {
         List<Ad> resultList = new ArrayList<>();
+        Iterator<Future<List<Ad>>> iterator;
+        Future<List<Ad>> tmp;
         while (!futureList.isEmpty()) {
-            for (Future<List<Ad>> future : futureList) {
-                if (future.isDone()) {
-                    resultList.addAll(future.get());
-                    futureList.remove(future);
+            iterator = futureList.iterator();
+            while (iterator.hasNext()) {
+                tmp = iterator.next();
+                if (tmp.isDone()) {
+                    if(Objects.nonNull(tmp.get())) {
+                        resultList.addAll(tmp.get());
+                    }
+                    iterator.remove();
                 }
-                TimeUnit.SECONDS.sleep(1);
             }
         }
         return resultList;
@@ -70,7 +80,8 @@ public class MultihreadCsvLoader implements AdLoader {
                     .withType(Ad.class)
                     .withIgnoreLeadingWhiteSpace(true)
                     .build();
-            return csvToBean.parse();
+            List<Ad> result = csvToBean.parse();
+            return result;
         }
     }
 }

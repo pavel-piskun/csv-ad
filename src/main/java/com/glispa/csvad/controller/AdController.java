@@ -17,7 +17,8 @@ public class AdController {
     private AdService adService;
 
     @GetMapping("/GetAds")
-    public List<Ad> getAds(@RequestParam Integer count, @RequestParam String strategy) {
+    public List<Ad> getAds(@RequestParam(required = false) Integer count,
+                           @RequestParam(required = false) String strategy) {
         return adService.getAdList(count, strategy);
     }
 }

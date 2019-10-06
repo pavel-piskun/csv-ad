@@ -5,14 +5,16 @@ import com.glispa.csvad.service.AdService;
 import com.glispa.csvad.storage.AdStorage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Objects;
 
+@Component
 public class DefaultAdService implements AdService {
-    @Value("${csv.dir}")
+    @Value("${default.ad.count}")
     private int defaultAdCount;
-    @Value("${csv.dir}")
+    @Value("${default.chooser.type}")
     private String defaultChooserType;
 
     @Autowired

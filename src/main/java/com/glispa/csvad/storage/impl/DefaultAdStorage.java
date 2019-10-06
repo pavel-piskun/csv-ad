@@ -5,19 +5,24 @@ import com.glispa.csvad.storage.AdLoader;
 import com.glispa.csvad.storage.AdStorage;
 import com.glispa.csvad.storage.chooser.ChooserProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+import javax.validation.ValidationException;
 import java.util.Collections;
 import java.util.List;
 
+@Component
 public class DefaultAdStorage implements AdStorage {
-    @Autowired
+
     private AdLoader adLoader;
-    @Autowired
     private ChooserProvider chooserProvider;
 
     private List<Ad> adList;
 
-    public DefaultAdStorage() {
+    @Autowired
+    public DefaultAdStorage(AdLoader adLoader, ChooserProvider chooserProvider) {
+        this.adLoader = adLoader;
+        this.chooserProvider = chooserProvider;
         init();
     }
 
@@ -37,8 +42,13 @@ public class DefaultAdStorage implements AdStorage {
     }
 
     private void validate(List<Ad> adList) {
-        //TODO: validate thai id's are unique
+        long uniqueIdAmount = adList.stream()
+                .map(Ad::getId)
+                .distinct()
+                .count();
+        if (uniqueIdAmount != adList.size()) {
+            throw new ValidationException("List contains non unique Ad's id.");
+        }
     }
-
 
 }
