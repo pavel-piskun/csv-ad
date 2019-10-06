@@ -23,11 +23,11 @@ public class WeightChooser implements Chooser {
 
     @Autowired
     public WeightChooser(@Value(("#{${campaigns}}")) Map<String, Integer> campaigns) {
-        validateCompaingConfig(campaigns);
+        validateCampaignConfig(campaigns);
         this.campaigns = campaigns;
     }
 
-    private void validateCompaingConfig(Map<String, Integer> campaigns) {
+    private void validateCampaignConfig(Map<String, Integer> campaigns) {
         if(100 < campaigns.values().stream().reduce(0, Integer::sum)) {
             throw new IllegalStateException("Sum of campaign weights can't be more than 100");
         }
@@ -85,6 +85,9 @@ public class WeightChooser implements Chooser {
     private List<Ad> generateDistributedAdsList(int count) {
         List<Ad> result = new ArrayList<>();
         for(Map.Entry<String, Integer> entry: this.campaigns.entrySet()) {
+            if(result.size() >= count) {
+                return result;
+            }
             populateAdsResultList(result, getDistributedAdAmount(count, entry.getValue()), entry.getKey());
         }
         populateAdsResultList(result, count-result.size(), OTHER);
